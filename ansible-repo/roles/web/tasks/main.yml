@@ -1,0 +1,105 @@
+---
+# Web server configuration role
+
+- name: Web Role - Configure web server
+  block:
+    - name: Install Nginx (Debian/Ubuntu)
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian"
+      become: true
+
+    - name: Install Apache (RedHat/CentOS)
+      yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat"
+      become: true
+
+  rescue:
+    - name: Handle web server installation error
+      debug:
+        msg: "Could not install web server - running in non-system environment"
+
+- name: Create web directory
+  file:
+    path: /var/www/html
+    state: directory
+    mode: '0755'
+    recurse: yes
+
+- name: Deploy welcome page
+  copy:
+    content: |
+      <!DOCTYPE html>
+      <html lang="ru">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Ansible-Pull Deployment</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  margin: 0;
+                  padding: 20px;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  min-height: 100vh;
+              }
+              .container {
+                  background: white;
+                  padding: 40px;
+                  border-radius: 10px;
+                  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                  max-width: 600px;
+                  text-align: center;
+              }
+              h1 {
+                  color: #667eea;
+                  margin-bottom: 10px;
+              }
+              .info {
+                  background: #f5f5f5;
+                  padding: 20px;
+                  border-radius: 5px;
+                  text-align: left;
+                  margin: 20px 0;
+                  font-family: monospace;
+              }
+              .info p {
+                  margin: 8px 0;
+                  color: #333;
+              }
+              .status {
+                  color: #27ae60;
+                  font-weight: bold;
+                  margin-top: 20px;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>✓ ansible-pull Deployment</h1>
+              <p>Конфигурация успешно развернута!</p>
+              
+              <div class="info">
+                  <p><strong>Hostname:</strong> {{ ansible_hostname }}</p>
+                  <p><strong>OS:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+                  <p><strong>Kernel:</strong> {{ ansible_kernel }}</p>
+                  <p><strong>Python Version:</strong> {{ ansible_python_version }}</p>
+                  <p><strong>Deployed at:</strong> {{ ansible_date_time.iso8601 }}</p>
+              </div>
+              
+              <p class="status">🎉 Deployment completed successfully!</p>
+          </div>
+      </body>
+      </html>
+    dest: /var/www/html/index.html
+    mode: '0644'
+
+- name: Display web role completion
+  debug:
+    msg: ✓ Web role configuration completed

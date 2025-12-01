@@ -1,0 +1,74 @@
+---
+# Common tasks for all systems
+
+- name: Common Role - Update system packages
+  block:
+    - name: Update apt cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      become: true
+
+    - name: Install basic utilities (Debian/Ubuntu)
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - htop
+          - net-tools
+          - tree
+        state: present
+      when: ansible_os_family == "Debian"
+      become: true
+
+    - name: Update yum cache (RedHat/CentOS)
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+      become: true
+
+  rescue:
+    - name: Handle package manager error
+      debug:
+        msg: "Could not update packages - running in non-system environment"
+
+- name: Create application directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/application
+    - /opt/application/logs
+    - /opt/application/config
+    - /var/log/application
+
+- name: Create configuration file
+  copy:
+    content: |
+      # Application Configuration
+      # Generated: {{ ansible_date_time.iso8601 }}
+      
+      application:
+        name: "Deployed Application"
+        version: "1.0.0"
+        environment: "production"
+        hostname: "{{ ansible_hostname }}"
+        
+      paths:
+        app_root: "/opt/application"
+        logs: "/var/log/application"
+        
+      timestamps:
+        deployed_at: "{{ ansible_date_time.iso8601 }}"
+        managed_by: "ansible-pull"
+    dest: /opt/application/config/app.conf
+    mode: '0644'
+
+- name: Display common role completion
+  debug:
+    msg: ✓ Common role configuration completed

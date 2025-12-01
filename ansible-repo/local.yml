@@ -1,0 +1,36 @@
+---
+# Local playbook для ansible-pull
+# Этот плейбук запускается локально на целевой виртуальной машине
+# через ansible-pull из репозитория
+
+- name: Configure Local Machine with ansible-pull
+  hosts: localhost
+  become: true
+  connection: local
+  gather_facts: yes
+
+  vars:
+    app_version: "1.0.0"
+    env_name: "production"
+
+  roles:
+    - role: common
+      tags: ['common']
+    - role: web
+      tags: ['web']
+    - role: monitoring
+      tags: ['monitoring']
+
+  post_tasks:
+    - name: Display completion message
+      debug:
+        msg: |
+          ╔════════════════════════════════════════════════════════════╗
+          ║       Configuration deployment completed successfully!    ║
+          ║                                                            ║
+          ║  Application Version: {{ app_version }}                   ║
+          ║  Environment: {{ env_name }}                              ║
+          ║  Hostname: {{ ansible_hostname }}                         ║
+          ║  OS: {{ ansible_distribution }} {{ ansible_distribution_version }}  ║
+          ╚════════════════════════════════════════════════════════════╝
+      when: ansible_os_family is defined
