@@ -194,9 +194,18 @@ check_ansible_files() {
     echo -e "${YELLOW}🎭 Роли Ansible:${NC}"
     echo ""
     
-    if [ -d "$CLONE_DIR/roles" ]; then
-        print_success "Найдена директория roles:"
-        ls -1 "$CLONE_DIR/roles" | sed 's/^/  /'
+    # Ищем роли в любой подпапке с именем 'roles'
+    local roles_found=$(find "$CLONE_DIR" -type d -name "roles" 2>/dev/null)
+    
+    if [ -n "$roles_found" ]; then
+        print_success "Найдены директории roles:"
+        echo "$roles_found" | while read roles_dir; do
+            if [ -d "$roles_dir" ]; then
+                local role_count=$(ls -1 "$roles_dir" 2>/dev/null | wc -l)
+                echo "  📁 $roles_dir ($role_count ролей)"
+                ls -1 "$roles_dir" 2>/dev/null | sed 's/^/    - /'
+            fi
+        done
         found_roles=1
     else
         print_error "Директория roles не найдена"
@@ -470,8 +479,9 @@ final_info() {
     echo "  • $(find "$CLONE_DIR" -name "*.yml" -o -name "*.yaml" | wc -l) YAML файлов"
     echo "  • $(find "$CLONE_DIR" -type f | wc -l) всего файлов"
     
-    if [ -d "$CLONE_DIR/roles" ]; then
-        echo "  • $(ls -1 "$CLONE_DIR/roles" | wc -l) ролей"
+    local total_roles=$(find "$CLONE_DIR" -type d -name "roles" -exec sh -c 'ls -1 "$1" 2>/dev/null | wc -l' _ {} \; | awk '{s+=$1} END {print s}')
+    if [ "$total_roles" -gt 0 ]; then
+        echo "  • $total_roles ролей"
     fi
     
     echo ""
